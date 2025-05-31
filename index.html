@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitoreo Almacén Cigarros</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 20px;
+      background: #f4f4f4;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      width: 300px;
+      transition: 0.3s;
+    }
+    .card:hover {
+      transform: scale(1.03);
+    }
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: #333;
+    }
+    .card p {
+      margin: 6px 0;
+      font-size: 15px;
+    }
+    .stock {
+      font-weight: bold;
+      color: #e60000;
+    }
+  </style>
+</head>
+<body>
+  <h2>Monitoreo en Tiempo Real - Almacén Cigarros</h2>
+  <div class="container" id="cardsContainer"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore, collection, onSnapshot, getDocs
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+      authDomain: "inventariopv-643f1.firebaseapp.com",
+      projectId: "inventariopv-643f1",
+      storageBucket: "inventariopv-643f1.appspot.com",
+      messagingSenderId: "96242533231",
+      appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const container = document.getElementById("cardsContainer");
+
+    async function actualizarTarjetas() {
+      const entradasSnap = await getDocs(collection(db, "almacenes/almacen_cigarro/entradas"));
+      const salidasSnap = await getDocs(collection(db, "almacenes/almacen_cigarro/salidas"));
+
+      const data = {};
+
+      entradasSnap.forEach(doc => {
+        const d = doc.data();
+        const key = d.CodigoBarra;
+        if (!data[key]) {
+          data[key] = {
+            nombre: d.NombreProducto,
+            entradas: 0,
+            salidas: 0,
+            ultimoFolioEntrada: 0,
+            ultimoFolioSalida: 0,
+          };
+        }
+        data[key].entradas += Number(d.Piezas);
+        if (d.Folio && d.Folio > data[key].ultimoFolioEntrada) {
+          data[key].ultimoFolioEntrada = d.Folio;
+        }
+      });
+
+      salidasSnap.forEach(doc => {
+        const d = doc.data();
+        const key = d.CodigoBarra;
+        if (!data[key]) {
+          data[key] = {
+            nombre: d.NombreProducto,
+            entradas: 0,
+            salidas: 0,
+            ultimoFolioEntrada: 0,
+            ultimoFolioSalida: 0,
+          };
+        }
+        data[key].salidas += Number(d.Piezas);
+        if (d.Folio && d.Folio > data[key].ultimoFolioSalida) {
+          data[key].ultimoFolioSalida = d.Folio;
+        }
+      });
+
+      container.innerHTML = "";
+      for (const codigo in data) {
+        const d = data[codigo];
+        const stock = d.entradas - d.salidas;
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <h3>${codigo} - ${d.nombre}</h3>
+          <p>Entradas: <strong>${d.entradas}</strong></p>
+          <p>Salidas: <strong>${d.salidas}</strong></p>
+          <p class="stock">Stock: ${stock}</p>
+          <p>Último Folio Entrada: ${d.ultimoFolioEntrada || 'N/A'}</p>
+          <p>Último Folio Salida: ${d.ultimoFolioSalida || 'N/A'}</p>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    // Actualización en tiempo real
+    onSnapshot(collection(db, "almacenes/almacen_cigarro/entradas"), actualizarTarjetas);
+    onSnapshot(collection(db, "almacenes/almacen_cigarro/salidas"), actualizarTarjetas);
+  </script>
+</body>
+</html>
