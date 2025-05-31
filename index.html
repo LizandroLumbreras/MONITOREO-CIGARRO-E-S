@@ -59,130 +59,181 @@
     .open .accordion-content {
       display: block;
     }
+
     .sub-acordeon {
-  border-bottom: 1px solid #ccc;
-  padding: 5px 10px;
-}
+      border-bottom: 1px solid #ccc;
+      padding: 5px 10px;
+    }
 
-.sub-acordeon-header {
-  background-color: #eee;
-  padding: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
+    .sub-acordeon-header {
+      background-color: #eee;
+      padding: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-.sub-acordeon-content p {
-  margin: 5px 0;
-  padding-left: 10px;
-  font-size: 14px;
-}
+    .sub-acordeon-content p {
+      margin: 5px 0;
+      padding-left: 10px;
+      font-size: 14px;
+    }
+
+    #bloqueo {
+      text-align: center;
+      margin-top: 100px;
+    }
+
+    #bloqueo input {
+      padding: 10px;
+      font-size: 16px;
+      width: 200px;
+    }
+
+    #bloqueo button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    #errorPIN {
+      color: red;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
-  <h2>Monitoreo de Entradas y Salidas - Almacén Cigarros</h2>
 
-  <div class="accordion" id="entradasAcordeon">
-  <div class="accordion-header">🟢 ENTRADAS</div>
-  <div class="accordion-content" id="entradasContenido">
-    <p>Cargando...</p>
+  <!-- BLOQUEO CON PIN -->
+  <div id="bloqueo">
+    <h2>🔒 Acceso Restringido</h2>
+    <p>Ingresa el PIN para acceder al monitoreo de salidas:</p>
+    <input type="password" id="pinInput" placeholder="Ingresa PIN">
+    <br>
+    <button onclick="verificarPIN()">Ingresar</button>
+    <p id="errorPIN"></p>
   </div>
-</div>
 
-<div class="accordion" id="salidasAcordeon">
-  <div class="accordion-header salidas">🔴 SALIDAS</div>
-  <div class="accordion-content" id="salidasContenido">
-    <p>Cargando...</p>
+  <!-- CONTENIDO PROTEGIDO -->
+  <div id="contenidoProtegido" style="display:none;">
+
+    <h2>Monitoreo de Entradas y Salidas - Almacén Cigarros</h2>
+
+    <div class="accordion" id="entradasAcordeon">
+      <div class="accordion-header">🟢 ENTRADAS</div>
+      <div class="accordion-content" id="entradasContenido">
+        <p>Cargando...</p>
+      </div>
+    </div>
+
+    <div class="accordion" id="salidasAcordeon">
+      <div class="accordion-header salidas">🔴 SALIDAS</div>
+      <div class="accordion-content" id="salidasContenido">
+        <p>Cargando...</p>
+      </div>
+    </div>
   </div>
-</div>
 
- <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import {
-    getFirestore, collection, onSnapshot
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
-    authDomain: "inventariopv-643f1.firebaseapp.com",
-    projectId: "inventariopv-643f1",
-    storageBucket: "inventariopv-643f1.appspot.com",
-    messagingSenderId: "96242533231",
-    appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+      authDomain: "inventariopv-643f1.firebaseapp.com",
+      projectId: "inventariopv-643f1",
+      storageBucket: "inventariopv-643f1.appspot.com",
+      messagingSenderId: "96242533231",
+      appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  const entradasContainer = document.getElementById("entradasContenido");
-  const salidasContainer = document.getElementById("salidasContenido");
+    const entradasContainer = document.getElementById("entradasContenido");
+    const salidasContainer = document.getElementById("salidasContenido");
 
-  function renderPorFolio(snapshot, container) {
-    container.innerHTML = "";
+    function renderPorFolio(snapshot, container) {
+      container.innerHTML = "";
 
-    if (snapshot.empty) {
-      container.innerHTML = "<p>No hay registros.</p>";
-      return;
+      if (snapshot.empty) {
+        container.innerHTML = "<p>No hay registros.</p>";
+        return;
+      }
+
+      const folios = {};
+
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        const folio = d.folio || d.folio_num || "SIN FOLIO";
+        if (!folios[folio]) {
+          folios[folio] = [];
+        }
+        folios[folio].push({
+          concepto: d.concepto || "Sin nombre",
+          cantidad: d.cantidad || 0,
+          codigo: d.codigo || "N/A",
+          fecha: d.fecha ? new Date(d.fecha).toLocaleString() : "Sin fecha"
+        });
+      });
+
+      Object.entries(folios).sort().reverse().forEach(([folio, productos]) => {
+        const grupo = document.createElement("div");
+        grupo.classList.add("sub-acordeon");
+
+        const encabezado = document.createElement("div");
+        encabezado.className = "sub-acordeon-header";
+        encabezado.textContent = `▶ Folio ${folio} (${productos.length} productos)`;
+
+        const contenido = document.createElement("div");
+        contenido.className = "sub-acordeon-content";
+        contenido.style.display = "none";
+
+        productos.forEach(p => {
+          const item = document.createElement("p");
+          item.textContent = `▸ ${p.fecha} | ${p.concepto} | ${p.cantidad} pzas | Código: ${p.codigo}`;
+          contenido.appendChild(item);
+        });
+
+        encabezado.addEventListener("click", () => {
+          const visible = contenido.style.display === "block";
+          contenido.style.display = visible ? "none" : "block";
+          encabezado.textContent = `${visible ? '▶' : '▼'} Folio ${folio} (${productos.length} productos)`;
+        });
+
+        grupo.appendChild(encabezado);
+        grupo.appendChild(contenido);
+        container.appendChild(grupo);
+      });
     }
 
-    const folios = {};
+    onSnapshot(collection(db, "almacenes/almacen_cigarro/entradas"), snap => {
+      renderPorFolio(snap, entradasContainer);
+    });
 
-    snapshot.forEach(doc => {
-      const d = doc.data();
-      const folio = d.folio || d.folio_num || "SIN FOLIO";
-      if (!folios[folio]) {
-        folios[folio] = [];
+    onSnapshot(collection(db, "almacenes/almacen_cigarro/salidas"), snap => {
+      renderPorFolio(snap, salidasContainer);
+    });
+
+    document.querySelectorAll('.accordion').forEach(ac => {
+      ac.querySelector('.accordion-header').addEventListener('click', () => {
+        ac.classList.toggle('open');
+      });
+    });
+
+    // 🔐 PIN de acceso
+    window.verificarPIN = function () {
+      const pinCorrecto = "provtec25"; // <-- Cambia aquí el PIN si lo deseas
+      const pinIngresado = document.getElementById("pinInput").value;
+      const error = document.getElementById("errorPIN");
+
+      if (pinIngresado === pinCorrecto) {
+        document.getElementById("bloqueo").style.display = "none";
+        document.getElementById("contenidoProtegido").style.display = "block";
+      } else {
+        error.textContent = "❌ PIN incorrecto. Intenta nuevamente.";
       }
-      folios[folio].push({
-        concepto: d.concepto || "Sin nombre",
-        cantidad: d.cantidad || 0,
-        codigo: d.codigo || "N/A",
-        fecha: d.fecha ? new Date(d.fecha).toLocaleString() : "Sin fecha"
-      });
-    });
-
-    Object.entries(folios).sort().reverse().forEach(([folio, productos]) => {
-      const grupo = document.createElement("div");
-      grupo.classList.add("sub-acordeon");
-
-      const encabezado = document.createElement("div");
-      encabezado.className = "sub-acordeon-header";
-      encabezado.textContent = `▶ Folio ${folio} (${productos.length} productos)`;
-
-      const contenido = document.createElement("div");
-      contenido.className = "sub-acordeon-content";
-      contenido.style.display = "none";
-
-      productos.forEach(p => {
-        const item = document.createElement("p");
-        item.textContent = `▸ ${p.fecha} | ${p.concepto} | ${p.cantidad} pzas | Código: ${p.codigo}`;
-        contenido.appendChild(item);
-      });
-
-      encabezado.addEventListener("click", () => {
-        const visible = contenido.style.display === "block";
-        contenido.style.display = visible ? "none" : "block";
-        encabezado.textContent = `${visible ? '▶' : '▼'} Folio ${folio} (${productos.length} productos)`;
-      });
-
-      grupo.appendChild(encabezado);
-      grupo.appendChild(contenido);
-      container.appendChild(grupo);
-    });
-  }
-
-  onSnapshot(collection(db, "almacenes/almacen_cigarro/entradas"), snap => {
-    renderPorFolio(snap, entradasContainer);
-  });
-
-  onSnapshot(collection(db, "almacenes/almacen_cigarro/salidas"), snap => {
-    renderPorFolio(snap, salidasContainer);
-  });
-
-  document.querySelectorAll('.accordion').forEach(ac => {
-    ac.querySelector('.accordion-header').addEventListener('click', () => {
-      ac.classList.toggle('open');
-    });
-  });
-</script>
+    };
+  </script>
 </body>
 </html>
