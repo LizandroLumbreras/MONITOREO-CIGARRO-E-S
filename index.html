@@ -79,37 +79,41 @@
 
       entradasSnap.forEach(doc => {
         const d = doc.data();
-        const key = d.CodigoBarra;
+        const key = d.CodigoBarra || "DESCONOCIDO";
         if (!data[key]) {
           data[key] = {
-            nombre: d.NombreProducto,
+            nombre: d.NombreProducto || "Sin nombre",
             entradas: 0,
             salidas: 0,
             ultimoFolioEntrada: 0,
             ultimoFolioSalida: 0,
           };
         }
-        data[key].entradas += Number(d.Piezas);
-        if (d.Folio && d.Folio > data[key].ultimoFolioEntrada) {
-          data[key].ultimoFolioEntrada = d.Folio;
+        const piezas = Number(d.Piezas) || 0;
+        const folio = Number(d.Folio) || 0;
+        data[key].entradas += piezas;
+        if (folio > data[key].ultimoFolioEntrada) {
+          data[key].ultimoFolioEntrada = folio;
         }
       });
 
       salidasSnap.forEach(doc => {
         const d = doc.data();
-        const key = d.CodigoBarra;
+        const key = d.CodigoBarra || "DESCONOCIDO";
         if (!data[key]) {
           data[key] = {
-            nombre: d.NombreProducto,
+            nombre: d.NombreProducto || "Sin nombre",
             entradas: 0,
             salidas: 0,
             ultimoFolioEntrada: 0,
             ultimoFolioSalida: 0,
           };
         }
-        data[key].salidas += Number(d.Piezas);
-        if (d.Folio && d.Folio > data[key].ultimoFolioSalida) {
-          data[key].ultimoFolioSalida = d.Folio;
+        const piezas = Number(d.Piezas) || 0;
+        const folio = Number(d.Folio) || 0;
+        data[key].salidas += piezas;
+        if (folio > data[key].ultimoFolioSalida) {
+          data[key].ultimoFolioSalida = folio;
         }
       });
 
