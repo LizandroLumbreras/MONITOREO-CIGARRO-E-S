@@ -170,10 +170,10 @@
           folios[folio] = [];
         }
         folios[folio].push({
-          concepto: d.concepto || "Sin nombre",
+          concepto: d.descripcion || "Sin nombre",
           cantidad: d.cantidad || 0,
           codigo: d.codigo || "N/A",
-          fecha: d.fecha ? new Date(d.fecha).toLocaleString() : "Sin fecha"
+          fecha: d.fecha || "Sin fecha",
         });
       });
 
