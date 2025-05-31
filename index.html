@@ -3,59 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Monitoreo Almacén Cigarros</title>
+  <title>Monitoreo Entradas/Salidas - Almacén Cigarros</title>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0; padding: 20px;
       background: #f4f4f4;
+      padding: 20px;
     }
+
     h2 {
       text-align: center;
       margin-bottom: 20px;
     }
-    .container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-    }
-    .card {
-      background: white;
-      border-radius: 10px;
+
+    .accordion {
+      max-width: 800px;
+      margin: 0 auto 20px auto;
+      background: #fff;
+      border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      padding: 20px;
-      width: 300px;
-      transition: 0.3s;
+      overflow: hidden;
     }
-    .card:hover {
-      transform: scale(1.03);
-    }
-    .card h3 {
-      margin: 0 0 10px;
-      font-size: 18px;
-      color: #333;
-    }
-    .card p {
-      margin: 6px 0;
-      font-size: 15px;
-    }
-    .stock {
+
+    .accordion-header {
+      padding: 16px;
+      background-color: #e60000;
+      color: #fff;
       font-weight: bold;
-      color: #e60000;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .accordion-header.salidas {
+      background-color: #003366;
+    }
+
+    .accordion-content {
+      display: none;
+      padding: 16px;
+      background-color: #fafafa;
+    }
+
+    .accordion-content p {
+      margin: 6px 0;
+      padding: 8px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .registro {
+      font-size: 14px;
+    }
+
+    .open .accordion-content {
+      display: block;
     }
   </style>
 </head>
 <body>
-  <h2>Monitoreo en Tiempo Real - Almacén Cigarros</h2>
-  <div class="container" id="cardsContainer"></div>
+  <h2>Monitoreo de Entradas y Salidas - Almacén Cigarros</h2>
 
- <script type="module">
+  <div class="accordion" id="entradasAcordeon">
+    <div class="accordion-header">🟢 ENTRADAS</div>
+    <div class="accordion-content" id="entradasContenido">
+      <p>Cargando...</p>
+    </div>
+  </div>
+
+  <div class="accordion" id="salidasAcordeon">
+    <div class="accordion-header salidas">🔴 SALIDAS</div>
+    <div class="accordion-content" id="salidasContenido">
+      <p>Cargando...</p>
+    </div>
+  </div>
+
+  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, onSnapshot, getDocs
+      getFirestore, collection, onSnapshot
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -69,75 +95,53 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const container = document.getElementById("cardsContainer");
 
-    async function actualizarTarjetas() {
-      const entradasSnap = await getDocs(collection(db, "almacenes/almacen_cigarro/entradas"));
-      const salidasSnap = await getDocs(collection(db, "almacenes/almacen_cigarro/salidas"));
+    const entradasContainer = document.getElementById("entradasContenido");
+    const salidasContainer = document.getElementById("salidasContenido");
 
-      const data = {};
-
-      entradasSnap.forEach(doc => {
-        const d = doc.data();
-        const key = d.codigo || "DESCONOCIDO";
-        if (!data[key]) {
-          data[key] = {
-            nombre: d.concepto || "Sin nombre",
-            entradas: 0,
-            salidas: 0,
-            ultimoFolioEntrada: 0,
-            ultimoFolioSalida: 0,
-          };
-        }
-        const piezas = Number(d.cantidad) || 0;
-        const folio = Number(d.folio_num) || 0;
-        data[key].entradas += piezas;
-        if (folio > data[key].ultimoFolioEntrada) {
-          data[key].ultimoFolioEntrada = folio;
-        }
-      });
-
-      salidasSnap.forEach(doc => {
-        const d = doc.data();
-        const key = d.codigo || "DESCONOCIDO";
-        if (!data[key]) {
-          data[key] = {
-            nombre: d.concepto || "Sin nombre",
-            entradas: 0,
-            salidas: 0,
-            ultimoFolioEntrada: 0,
-            ultimoFolioSalida: 0,
-          };
-        }
-        const piezas = Number(d.cantidad) || 0;
-        const folio = Number(d.folio_num) || 0;
-        data[key].salidas += piezas;
-        if (folio > data[key].ultimoFolioSalida) {
-          data[key].ultimoFolioSalida = folio;
-        }
-      });
-
+    function renderMovimientos(snapshot, container, tipo) {
       container.innerHTML = "";
-      for (const codigo in data) {
-        const d = data[codigo];
-        const stock = d.entradas - d.salidas;
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <h3>${codigo} - ${d.nombre}</h3>
-          <p>Entradas: <strong>${d.entradas}</strong></p>
-          <p>Salidas: <strong>${d.salidas}</strong></p>
-          <p class="stock">Stock: ${stock}</p>
-          <p>Último Folio Entrada: ${d.ultimoFolioEntrada || 'N/A'}</p>
-          <p>Último Folio Salida: ${d.ultimoFolioSalida || 'N/A'}</p>
-        `;
-        container.appendChild(card);
+      if (snapshot.empty) {
+        container.innerHTML = "<p>No hay registros.</p>";
+        return;
       }
+
+      const registros = [];
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        const fecha = d.fecha ? new Date(d.fecha).toLocaleString() : "Sin fecha";
+        const folio = d.folio || d.folio_num || "N/A";
+        const nombre = d.concepto || "Sin nombre";
+        const cantidad = d.cantidad || 0;
+        const codigo = d.codigo || "N/A";
+        registros.push({ fecha, folio, nombre, cantidad, codigo });
+      });
+
+      registros.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)); // Más reciente primero
+
+      registros.forEach(r => {
+        const p = document.createElement("p");
+        p.className = "registro";
+        p.textContent = `${r.fecha} | Folio: ${r.folio} | ${r.nombre} | ${r.cantidad} pzas | Código: ${r.codigo}`;
+        container.appendChild(p);
+      });
     }
 
-    // Actualización en tiempo real
-    onSnapshot(collection(db, "almacenes/almacen_cigarro/entradas"), actualizarTarjetas);
-    onSnapshot(collection(db, "almacenes/almacen_cigarro/salidas"), actualizarTarjetas);
+    // Escuchar en tiempo real
+    onSnapshot(collection(db, "almacenes/almacen_cigarro/entradas"), snap => {
+      renderMovimientos(snap, entradasContainer, "entradas");
+    });
+
+    onSnapshot(collection(db, "almacenes/almacen_cigarro/salidas"), snap => {
+      renderMovimientos(snap, salidasContainer, "salidas");
+    });
+
+    // Acordeón toggle
+    document.querySelectorAll('.accordion').forEach(ac => {
+      ac.querySelector('.accordion-header').addEventListener('click', () => {
+        ac.classList.toggle('open');
+      });
+    });
   </script>
 </body>
 </html>
