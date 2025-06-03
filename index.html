@@ -192,7 +192,7 @@
 
         productos.forEach(p => {
           const item = document.createElement("p");
-          item.textContent = `▸ ${p.fecha} | ${p.concepto} | ${p.cantidad} pzas | Código: ${p.codigo}`;
+         item.textContent = `▸ ${p.fecha} | ${p.concepto} | ${p.cantidad} pzas | Código: ${p.codigo} | Sucursal: ${p.sucursal}`;
           contenido.appendChild(item);
         });
 
