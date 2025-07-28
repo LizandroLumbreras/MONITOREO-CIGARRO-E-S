@@ -163,66 +163,97 @@
     return "Sin nombre";
   }
 
-  async function renderPorFolio(snapshot, container) {
-    container.innerHTML = "";
+ async function renderPorFolio(snapshot, container) {
+  container.innerHTML = "";
 
-    if (snapshot.empty) {
-      container.innerHTML = "<p>No hay registros.</p>";
-      return;
-    }
+  if (snapshot.empty) {
+    container.innerHTML = "<p>No hay registros.</p>";
+    return;
+  }
 
-    const folios = {};
+  const folios = {};
 
-    for (const doc of snapshot.docs) {
-      const d = doc.data();
-      const folio = d.folio || d.folio_num || "SIN FOLIO";
-      if (!folios[folio]) folios[folio] = [];
+  for (const doc of snapshot.docs) {
+    const d = doc.data();
+    const folio = d.folio || d.folio_num || "SIN FOLIO";
+    if (!folios[folio]) folios[folio] = [];
 
-     folios[folio].push({
-  concepto: d.concepto || "Sin nombre",
-        cantidad: d.cantidad || 0,
-        codigo: d.codigo || "N/A",
-        fecha: d.fecha || "Sin fecha",
-        sucursal: d.sucursal || "Sucursal desconocida"
-      });
-    }
-
-    Object.entries(folios).sort().reverse().forEach(([folio, productos]) => {
-      const grupo = document.createElement("div");
-      grupo.classList.add("sub-acordeon");
-
-      const encabezado = document.createElement("div");
-      encabezado.className = "sub-acordeon-header";
-      encabezado.textContent = `▶ Folio ${folio} (${productos.length} productos)`;
-
-      const contenido = document.createElement("div");
-      contenido.className = "sub-acordeon-content";
-      contenido.style.display = "none";
-
-      productos.forEach(p => {
-       let fechaFormateada = "Sin fecha";
-if (p.fecha && !isNaN(Date.parse(p.fecha))) {
-  fechaFormateada = new Date(p.fecha).toLocaleString('es-MX', {
-    day: 'numeric', month: 'numeric', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', second: '2-digit'
-  });
-}
-        const item = document.createElement("p");
-        item.textContent = `▸ ${fechaFormateada} | ${p.concepto} | ${p.cantidad} pzas | Código: ${p.codigo} | Sucursal: ${p.sucursal}`;
-        contenido.appendChild(item);
-      });
-
-      encabezado.addEventListener("click", () => {
-        const visible = contenido.style.display === "block";
-        contenido.style.display = visible ? "none" : "block";
-        encabezado.textContent = `${visible ? '▶' : '▼'} Folio ${folio} (${productos.length} productos)`;
-      });
-
-      grupo.appendChild(encabezado);
-      grupo.appendChild(contenido);
-      container.appendChild(grupo);
+    folios[folio].push({
+      concepto: d.concepto || "Sin nombre",
+      cantidad: d.cantidad || 0,
+      codigo: d.codigo || "N/A",
+      fecha: d.fecha || "Sin fecha",
+      sucursal: d.sucursal || "Sucursal desconocida"
     });
   }
+
+  Object.entries(folios).sort().reverse().forEach(([folio, productos]) => {
+    const grupo = document.createElement("div");
+    grupo.classList.add("sub-acordeon");
+
+    const encabezado = document.createElement("div");
+    encabezado.className = "sub-acordeon-header";
+
+    // Botón de imprimir
+    const btnImprimir = document.createElement("button");
+    btnImprimir.textContent = "🖨 Imprimir";
+    btnImprimir.style.cssText = "float:right; background:#4CAF50; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:5px; font-size:12px;";
+
+    btnImprimir.addEventListener("click", () => {
+      imprimirFolio(folio, productos);
+    });
+
+    // Texto encabezado + botón
+    encabezado.innerHTML = `▶ Folio ${folio} (${productos.length} productos)`;
+    encabezado.appendChild(btnImprimir);
+
+    const contenido = document.createElement("div");
+    contenido.className = "sub-acordeon-content";
+    contenido.style.display = "none";
+
+    productos.forEach(p => {
+      let fechaFormateada = "Sin fecha";
+      if (p.fecha && !isNaN(Date.parse(p.fecha))) {
+        fechaFormateada = new Date(p.fecha).toLocaleString('es-MX', {
+          day: 'numeric', month: 'numeric', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+      }
+
+      const item = document.createElement("p");
+      item.textContent = `▸ ${fechaFormateada} | ${p.concepto} | ${p.cantidad} pzas | Código: ${p.codigo} | Sucursal: ${p.sucursal}`;
+      contenido.appendChild(item);
+    });
+
+    encabezado.addEventListener("click", (e) => {
+      if (e.target.tagName.toLowerCase() !== "button") { // Evita cerrar al hacer clic en el botón
+        const visible = contenido.style.display === "block";
+        contenido.style.display = visible ? "none" : "block";
+        encabezado.firstChild.textContent = `${visible ? '▶' : '▼'} Folio ${folio} (${productos.length} productos)`;
+      }
+    });
+
+    grupo.appendChild(encabezado);
+    grupo.appendChild(contenido);
+    container.appendChild(grupo);
+  });
+}
+function imprimirFolio(folio, productos) {
+  let html = `<h2>Folio ${folio}</h2><hr>`;
+  productos.forEach(p => {
+    html += `<p>${p.concepto} | ${p.cantidad} pzas | Código: ${p.codigo} | Sucursal: ${p.sucursal}</p>`;
+  });
+
+  const ventana = window.open("", "_blank");
+  ventana.document.write(`
+    <html>
+    <head><title>Impresión Folio ${folio}</title></head>
+    <body style="font-family: Arial; font-size: 14px;">${html}</body>
+    </html>
+  `);
+  ventana.document.close();
+  ventana.print();
+}
 
   onSnapshot(collection(db, "almacenes/almacen_cigarro/entradas"), snap => {
     renderPorFolio(snap, entradasContainer);
