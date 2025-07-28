@@ -178,9 +178,8 @@
       const folio = d.folio || d.folio_num || "SIN FOLIO";
       if (!folios[folio]) folios[folio] = [];
 
-      const nombre = await obtenerNombreProducto(d.codigo || "N/A");
-      folios[folio].push({
-        concepto: nombre,
+     folios[folio].push({
+  concepto: d.concepto || "Sin nombre",
         cantidad: d.cantidad || 0,
         codigo: d.codigo || "N/A",
         fecha: d.fecha || "Sin fecha",
@@ -201,10 +200,13 @@
       contenido.style.display = "none";
 
       productos.forEach(p => {
-        const fechaFormateada = new Date(p.fecha).toLocaleString('es-MX', {
-          day: 'numeric', month: 'numeric', year: 'numeric',
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
+       let fechaFormateada = "Sin fecha";
+if (p.fecha && !isNaN(Date.parse(p.fecha))) {
+  fechaFormateada = new Date(p.fecha).toLocaleString('es-MX', {
+    day: 'numeric', month: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+}
         const item = document.createElement("p");
         item.textContent = `▸ ${fechaFormateada} | ${p.concepto} | ${p.cantidad} pzas | Código: ${p.codigo} | Sucursal: ${p.sucursal}`;
         contenido.appendChild(item);
