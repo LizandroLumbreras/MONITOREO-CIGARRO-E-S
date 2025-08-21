@@ -177,34 +177,34 @@
       // Construimos el HTML del pop-up con estilos de ticket
       const styles = `
         <style>
-          :root{ --w-mm:80; --pad-mm:3; --sep:1px dashed #000 }
-          @page{ size: calc(var(--w-mm)*1mm) auto; margin: 0 }
-          *{ box-sizing:border-box }
-          body{ margin:0; padding:0; background:#fff; color:#000;
-                font: 12px/1.25 ui-monospace, Menlo, "Courier New", monospace; }
-          .ticket{ width: calc(var(--w-mm)*1mm); padding: calc(var(--pad-mm)*1mm); }
-          .t-center{ text-align:center } .t-right{ text-align:right }
-          .h1{ font-weight:700; font-size:14px; letter-spacing:.3px }
-          .xs{ font-size:10px } .sm{ font-size:11px }
-          .line{ border-top: var(--sep); margin:6px 0 }
+    :root{ --w-mm:80; --pad-mm:3; --sep:1px dashed #000 }
+    @page{ size: calc(var(--w-mm)*1mm) auto; margin: 0 }
+    *{ box-sizing:border-box }
+    body{ margin:0; padding:0; background:#fff; color:#000;
+          font: 14px/1.4 ui-monospace, Menlo, "Courier New", monospace; }
+    .ticket{ width: calc(var(--w-mm)*1mm); padding: calc(var(--pad-mm)*1mm); }
+    .t-center{ text-align:center } .t-right{ text-align:right }
+    .h1{ font-weight:700; font-size:16px; letter-spacing:.5px }
+    .xs{ font-size:12px } .sm{ font-size:13px }
+    .line{ border-top: var(--sep); margin:8px 0 }
 
-          .logo{ display:block; margin:2px auto 6px; width: 45mm; max-width:100%;
-                 image-rendering: -webkit-optimize-contrast; }
+    .logo{ display:block; margin:2px auto 6px; width: 45mm; max-width:100%;
+           image-rendering: -webkit-optimize-contrast; }
 
-          .kv{ display:flex; justify-content:space-between; gap:6px; font-size:11px }
-          .kv b{ font-weight:700 }
+    .kv{ display:flex; justify-content:space-between; gap:6px; font-size:14px }
+    .kv b{ font-weight:700 }
 
-          .th,.tr{ display:flex; gap:2mm; font-size:11px; }
-          .th{ font-weight:700; border-bottom: var(--sep); padding:2px 0 3px }
-          .tr{ padding:2px 0 }
-          .col-cod{ width:22mm; white-space:nowrap; overflow:hidden }
-          .col-des{ flex:1 1 auto; overflow:hidden }
-          .col-cant{ width:12mm; text-align:right }
+    .th,.tr{ display:flex; gap:2mm; font-size:14px; line-height:1.4 }
+    .th{ font-weight:700; border-bottom: var(--sep); padding:3px 0 4px }
+    .tr{ padding:3px 0 }
+    .col-cod{ width:22mm; white-space:nowrap; overflow:hidden }
+    .col-des{ flex:1 1 auto; overflow:hidden }
+    .col-cant{ width:12mm; text-align:right }
 
-          .firmas{ display:flex; gap:6mm; margin-top:8px }
-          .firma{ flex:1 1 0; text-align:center }
-          .firma img{ width: 42mm; max-width:100%; border:1px solid #000; background:#fff }
-        </style>
+    .firmas{ display:flex; gap:6mm; margin-top:10px }
+    .firma{ flex:1 1 0; text-align:center }
+    .firma img{ width: 42mm; max-width:100%; border:1px solid #000; background:#fff }
+  </style>
       `;
 
       const filasHTML = (payload.productos||[]).map(p=>`
