@@ -99,58 +99,79 @@
 
     const contenedor = document.getElementById("contenedor");
 
-    // 🔥 Monitoreo en tiempo real – Almacén Cigarro
-// 🔥 Monitoreo en tiempo real – Fusionado salidas + salidas1.0
-function cargarSalidasTiempoReal(){
+// 🔥 Monitoreo en tiempo real – Almacén Cigarro (DOS RUTAS)
+function cargarSalidasTiempoReal() {
 
-  const qVieja = query(
-    collection(db,"almacenes/almacen_cigarro/salidas"),
-    orderBy("folio","desc")
+  // RUTA 1
+  const q1 = query(
+    collection(db, "almacenes/almacen_cigarro/salidas"),
+    orderBy("folio", "desc")
   );
 
-  const qNueva = query(
-    collection(db,"almacenes/almacen_cigarro/salidas1.0"),
-    orderBy("folio","desc")
+  // RUTA 2 (la nueva)
+  const q2 = query(
+    collection(db, "almacenes/almacen_cigarro/salidas1.0"),
+    orderBy("folio", "desc")
   );
 
-  let datosViejos = [];
-  let datosNuevos = [];
+  // Contenedores temporales
+  let datos1 = [];
+  let datos2 = [];
 
-  function renderizar(){
+  // Escucha RUTA 1
+  onSnapshot(q1, (snapshot) => {
+    datos1 = [];
+    snapshot.forEach((doc) => {
+      datos1.push({ id: doc.id, ...doc.data() });
+    });
+    renderizarTodo();
+  });
+
+  // Escucha RUTA 2
+  onSnapshot(q2, (snapshot) => {
+    datos2 = [];
+    snapshot.forEach((doc) => {
+      datos2.push({ id: doc.id, ...doc.data() });
+    });
+    renderizarTodo();
+  });
+
+  // 🔄 Función que junta y muestra todo
+  function renderizarTodo() {
     contenedor.innerHTML = "";
 
-    // Combinar ambos arrays
-    const todos = [...datosViejos, ...datosNuevos];
+    // une las 2 rutas
+    let combinado = [...datos1, ...datos2];
 
-    // Quitar duplicados por folio
-    const mapa = new Map();
-    todos.forEach(x => mapa.set(x.folio, x));
+    // orden por folio (desc)
+    combinado.sort((a, b) => (b.folio || "").localeCompare(a.folio || ""));
 
-    // Ordenar por folio DESC
-    const lista = Array.from(mapa.values())
-                       .sort((a,b)=> Number(b.folio) - Number(a.folio));
-
-    // Dibujar tarjetas
-    lista.forEach(data => {
+    combinado.forEach((data) => {
       const div = document.createElement("div");
-      div.className="tarjeta";
+      div.className = "tarjeta";
       div.dataset.payload = JSON.stringify(data);
 
       div.innerHTML = `
         <h2>Folio: ${data.folio || ""} – ${data.fecha || ""}</h2>
         <p><b>Destino:</b> ${data.destino || ""}</p>
-        <p><b>Entrega:</b> ${data.entrega || ""} | <b>Recibe:</b> ${data.recibe || ""}</p>
+        <p><b>Entrega:</b> ${data.entrega || ""} | 
+        <b>Recibe:</b> ${data.recibe || ""}</p>
 
         <table class="productos">
-          <thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th></tr></thead>
+          <thead>
+            <tr><th>Código</th><th>Producto</th><th>Cantidad</th></tr>
+          </thead>
           <tbody>
-            ${(data.productos || []).map(p=>`
+            ${(data.productos || [])
+              .map(
+                (p) => `
               <tr>
                 <td>${p.codigo || ""}</td>
                 <td>${p.descripcion || ""}</td>
                 <td>${p.cantidad || 0}</td>
-              </tr>
-            `).join("")}
+              </tr>`
+              )
+              .join("")}
           </tbody>
         </table>
 
@@ -159,6 +180,7 @@ function cargarSalidasTiempoReal(){
             <p>Firma Entrega</p>
             ${data.firmaEntrega ? `<img src="${data.firmaEntrega}">` : "—"}
           </div>
+
           <div class="firma-box">
             <p>Firma Recibe</p>
             ${data.firmaRecibe ? `<img src="${data.firmaRecibe}">` : "—"}
@@ -168,25 +190,16 @@ function cargarSalidasTiempoReal(){
         <button class="btn-imprimir">🖨 Imprimir</button>
       `;
 
-      div.querySelector(".btn-imprimir").addEventListener("click", ()=>imprimirTarjeta(div));
+      div.querySelector(".btn-imprimir").addEventListener("click", () =>
+        imprimirTarjeta(div)
+      );
+
       contenedor.appendChild(div);
     });
   }
-
-  // Escuchar ruta vieja
-  onSnapshot(qVieja, snap => {
-    datosViejos = snap.docs.map(d => d.data());
-    renderizar();
-  });
-
-  // Escuchar ruta nueva
-  onSnapshot(qNueva, snap => {
-    datosNuevos = snap.docs.map(d => d.data());
-    renderizar();
-  });
-
 }
-    cargarSalidasTiempoReal();
+
+cargarSalidasTiempoReal();
 
     // 🖨 Imprimir una tarjeta como ticket térmico (80mm)
     window.imprimirTarjeta = function(tarjetaEl){
