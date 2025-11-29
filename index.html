@@ -100,52 +100,92 @@
     const contenedor = document.getElementById("contenedor");
 
     // 🔥 Monitoreo en tiempo real – Almacén Cigarro
-    function cargarSalidasTiempoReal(){
-      const q = query(
-        collection(db,"almacenes/almacen_cigarro/salidas"),
-        orderBy("folio","desc")
-      );
+// 🔥 Monitoreo en tiempo real – Fusionado salidas + salidas1.0
+function cargarSalidasTiempoReal(){
 
-      onSnapshot(q, (snapshot)=>{
-        contenedor.innerHTML = "";
-        snapshot.forEach(doc=>{
-          const data = doc.data();
+  const qVieja = query(
+    collection(db,"almacenes/almacen_cigarro/salidas"),
+    orderBy("folio","desc")
+  );
 
-          const div = document.createElement("div");
-          div.className="tarjeta";
-          // Guardamos el JSON en data-atributo por si lo necesitamos exacto
-          div.dataset.payload = JSON.stringify(data);
+  const qNueva = query(
+    collection(db,"almacenes/almacen_cigarro/salidas1.0"),
+    orderBy("folio","desc")
+  );
 
-          div.innerHTML=`
-            <h2>Folio: ${data.folio || ""} – ${data.fecha || ""}</h2>
-            <p><b>Destino:</b> ${data.destino || ""}</p>
-            <p><b>Entrega:</b> ${data.entrega || ""} | <b>Recibe:</b> ${data.recibe || ""}</p>
-            <table class="productos">
-              <thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th></tr></thead>
-              <tbody>
-                ${(data.productos || []).map(p=>`
-                  <tr><td>${p.codigo || ""}</td><td>${p.descripcion || ""}</td><td>${p.cantidad || 0}</td></tr>
-                `).join("")}
-              </tbody>
-            </table>
-            <div class="firmas">
-              <div class="firma-box">
-                <p>Firma Entrega</p>
-                ${data.firmaEntrega ? `<img src="${data.firmaEntrega}">` : "—"}
-              </div>
-              <div class="firma-box">
-                <p>Firma Recibe</p>
-                ${data.firmaRecibe ? `<img src="${data.firmaRecibe}">` : "—"}
-              </div>
-            </div>
-            <button class="btn-imprimir">🖨 Imprimir</button>
-          `;
-          // click imprimir
-          div.querySelector(".btn-imprimir").addEventListener("click", ()=>imprimirTarjeta(div));
-          contenedor.appendChild(div);
-        });
-      });
-    }
+  let datosViejos = [];
+  let datosNuevos = [];
+
+  function renderizar(){
+    contenedor.innerHTML = "";
+
+    // Combinar ambos arrays
+    const todos = [...datosViejos, ...datosNuevos];
+
+    // Quitar duplicados por folio
+    const mapa = new Map();
+    todos.forEach(x => mapa.set(x.folio, x));
+
+    // Ordenar por folio DESC
+    const lista = Array.from(mapa.values())
+                       .sort((a,b)=> Number(b.folio) - Number(a.folio));
+
+    // Dibujar tarjetas
+    lista.forEach(data => {
+      const div = document.createElement("div");
+      div.className="tarjeta";
+      div.dataset.payload = JSON.stringify(data);
+
+      div.innerHTML = `
+        <h2>Folio: ${data.folio || ""} – ${data.fecha || ""}</h2>
+        <p><b>Destino:</b> ${data.destino || ""}</p>
+        <p><b>Entrega:</b> ${data.entrega || ""} | <b>Recibe:</b> ${data.recibe || ""}</p>
+
+        <table class="productos">
+          <thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th></tr></thead>
+          <tbody>
+            ${(data.productos || []).map(p=>`
+              <tr>
+                <td>${p.codigo || ""}</td>
+                <td>${p.descripcion || ""}</td>
+                <td>${p.cantidad || 0}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+
+        <div class="firmas">
+          <div class="firma-box">
+            <p>Firma Entrega</p>
+            ${data.firmaEntrega ? `<img src="${data.firmaEntrega}">` : "—"}
+          </div>
+          <div class="firma-box">
+            <p>Firma Recibe</p>
+            ${data.firmaRecibe ? `<img src="${data.firmaRecibe}">` : "—"}
+          </div>
+        </div>
+
+        <button class="btn-imprimir">🖨 Imprimir</button>
+      `;
+
+      div.querySelector(".btn-imprimir").addEventListener("click", ()=>imprimirTarjeta(div));
+      contenedor.appendChild(div);
+    });
+  }
+
+  // Escuchar ruta vieja
+  onSnapshot(qVieja, snap => {
+    datosViejos = snap.docs.map(d => d.data());
+    renderizar();
+  });
+
+  // Escuchar ruta nueva
+  onSnapshot(qNueva, snap => {
+    datosNuevos = snap.docs.map(d => d.data());
+    renderizar();
+  });
+
+}
     cargarSalidasTiempoReal();
 
     // 🖨 Imprimir una tarjeta como ticket térmico (80mm)
