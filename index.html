@@ -102,17 +102,17 @@
 // 🔥 Monitoreo en tiempo real – Almacén Cigarro (DOS RUTAS)
 function cargarSalidasTiempoReal() {
 
-  // RUTA 1
-  const q1 = query(
-    collection(db, "almacenes/almacen_cigarro/salidas"),
-    orderBy("folio", "desc")
-  );
+// RUTA 1
+const q1 = collection(
+  db,
+  "almacenes/almacen_cigarro/salidas"
+);
 
-  // RUTA 2 (la nueva)
-  const q2 = query(
-    collection(db, "almacenes/almacen_cigarro/salidas1.0"),
-    orderBy("folio", "desc")
-  );
+// RUTA 2
+const q2 = collection(
+  db,
+  "almacenes/almacen_cigarro/salidas1.0"
+);
 
   // Contenedores temporales
   let datos1 = [];
@@ -143,8 +143,23 @@ function cargarSalidasTiempoReal() {
     // une las 2 rutas
     let combinado = [...datos1, ...datos2];
 
-    // orden por folio (desc)
-    combinado.sort((a, b) => (b.folio || "").localeCompare(a.folio || ""));
+// 🔥 Orden correcto por número del folio
+combinado.sort((a, b) => {
+
+  const numA = parseInt(
+    String(a.folio || "")
+      .replace("SAL-CIG-", "")
+      .trim()
+  ) || 0;
+
+  const numB = parseInt(
+    String(b.folio || "")
+      .replace("SAL-CIG-", "")
+      .trim()
+  ) || 0;
+
+  return numB - numA;
+});
 
     combinado.forEach((data) => {
       const div = document.createElement("div");
