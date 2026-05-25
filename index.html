@@ -102,67 +102,41 @@
 // 🔥 Monitoreo en tiempo real – Almacén Cigarro (DOS RUTAS)
 function cargarSalidasTiempoReal() {
 
-// RUTA 1
 const q1 = collection(
-  db,
-  "almacenes/almacen_cigarro/salidas"
-);
-
-// RUTA 2
-const q2 = collection(
   db,
   "almacenes/almacen_cigarro/salidas1.0"
 );
 
-  // Contenedores temporales
-  let datos1 = [];
-  let datos2 = [];
+let datos1 = [];
 
-  // Escucha RUTA 1
-  onSnapshot(q1, (snapshot) => {
-    datos1 = [];
-    snapshot.forEach((doc) => {
-      datos1.push({ id: doc.id, ...doc.data() });
+onSnapshot(q1, (snapshot) => {
+
+  datos1 = [];
+
+  snapshot.forEach((doc) => {
+
+    datos1.push({
+      id: doc.id,
+      ...doc.data()
     });
-    renderizarTodo();
+
   });
 
-  // Escucha RUTA 2
-  onSnapshot(q2, (snapshot) => {
-    datos2 = [];
-    snapshot.forEach((doc) => {
-      datos2.push({ id: doc.id, ...doc.data() });
-    });
-    renderizarTodo();
-  });
+  renderizarTodo();
 
+});
   // 🔄 Función que junta y muestra todo
   function renderizarTodo() {
     contenedor.innerHTML = "";
 
-    // une las 2 rutas
-    let combinado = [...datos1, ...datos2];
+let combinado = [...datos1];
 
-// 🔥 Orden correcto por número del folio
 combinado.sort((a, b) => {
 
-  // extrae SOLO números del folio
-  const numA = parseInt(
-    String(a.folio || "").match(/\d+/)?.[0] || 0
-  );
+  return String(b.folio || "")
+    .localeCompare(String(a.folio || ""));
 
-  const numB = parseInt(
-    String(b.folio || "").match(/\d+/)?.[0] || 0
-  );
-
-  return numB - numA;
 });
-    
-console.log(
-  combinado.map(x => ({
-    folio: x.folio
-  }))
-);
     
     combinado.forEach((data) => {
       const div = document.createElement("div");
