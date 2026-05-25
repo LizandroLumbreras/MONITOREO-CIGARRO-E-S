@@ -146,21 +146,24 @@ const q2 = collection(
 // 🔥 Orden correcto por número del folio
 combinado.sort((a, b) => {
 
+  // extrae SOLO números del folio
   const numA = parseInt(
-    String(a.folio || "")
-      .replace("SAL-CIG-", "")
-      .trim()
-  ) || 0;
+    String(a.folio || "").match(/\d+/)?.[0] || 0
+  );
 
   const numB = parseInt(
-    String(b.folio || "")
-      .replace("SAL-CIG-", "")
-      .trim()
-  ) || 0;
+    String(b.folio || "").match(/\d+/)?.[0] || 0
+  );
 
   return numB - numA;
 });
-
+    
+console.log(
+  combinado.map(x => ({
+    folio: x.folio
+  }))
+);
+    
     combinado.forEach((data) => {
       const div = document.createElement("div");
       div.className = "tarjeta";
